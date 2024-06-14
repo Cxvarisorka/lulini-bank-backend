@@ -11,7 +11,8 @@ const userSchema = new Schema({
         type: Array
     },
     bankNumber: {
-        
+        type: Number,
+        unique: true
     },
     username: {
         type: String,
@@ -36,4 +37,4 @@ const userSchema = new Schema({
 // Create the user model
 const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+export default User;
