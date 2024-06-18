@@ -11,7 +11,7 @@ const userSchema = new Schema({
         type: Array
     },
     bankNumber: {
-        type: Number,
+        type: String,
         unique: true
     },
     username: {

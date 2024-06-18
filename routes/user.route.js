@@ -37,6 +37,28 @@ router.post('/signup', async (req, res) => {
     }
 })
 
+router.post('/signin', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const existingUser = await User.findOne({ email });
+
+        if (!existingUser) {
+            return res.status(404).send({ message: 'User does not exist' });
+        }
+
+        if (existingUser.password === password) {
+            return res.status(200).send({ message: 'Successfully logged in!', account: {...existingUser} });
+        }
+
+        // If the password does not match
+        return res.status(400).send({ message: 'Invalid credentials' });
+    } catch (err) {
+        return res.status(500).send({ message: 'Internal server error', err });
+    }
+});
+
+
 router.get('/user', (req, res) => {
     res.status(200).send("Yeeeeee")
 })
