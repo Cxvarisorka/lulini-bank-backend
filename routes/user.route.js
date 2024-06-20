@@ -58,6 +58,58 @@ router.post('/signin', async (req, res) => {
     }
 });
 
+router.put('/changepassword', async (req, res) => {
+    const {newPassword, email, currentPassword, confirmPassword} = req.body;
+
+    try{
+        const user = await User.findOne({ email });
+
+        if(user.password !== currentPassword){
+            res.status(400).send({ message: "Current password is incorrect!" });
+        }
+
+        if(newPassword !== confirmPassword){
+            res.status(400).send({ message: "New password dont match reapet password!" });
+        }
+
+        user.password = newPassword;
+
+        await user.save();
+
+        return res.status(200).send({ message: "Password changed succesfully", account: {...user} });
+
+    } catch (err) {
+        return res.status(500).send({ message: 'Internal server error', err });
+    }
+});
+
+router.put('/loan', async (req, res) => {
+    const {password, loan, account} = req.body;
+
+    const email = account.email;
+    
+    try{
+        const user = await User.findOne({ email });
+
+        if(!user){
+            return res.status(400).send({ message: 'Account not found!' });
+        }
+
+        if(user.password !== password){
+            return res.status(400).send({ message: 'Password is incorrect!' });
+        }
+
+        user.transactions.push(loan);
+        
+        await user.save();
+
+        return res.status(200).send({ message: "Loan is succsesfully!", account: {...user} })
+
+    } catch(error) {
+        res.status(500).send({ message: 'Internal server error', error });
+    }
+})
+
 
 router.get('/user', (req, res) => {
     res.status(200).send("Yeeeeee")
