@@ -10,6 +10,9 @@ const userSchema = new Schema({
     transactions: {
         type: Array
     },
+    recipients: {
+        type: Array
+    },
     bankNumber: {
         type: String,
         unique: true
