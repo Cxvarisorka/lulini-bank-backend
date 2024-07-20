@@ -11,7 +11,7 @@ const app = express();
 dotenv.config();
 
 app.use(bodyParser.json())
-app.options('*', cors());
+app.use(cors());
 
 
 // Routes
