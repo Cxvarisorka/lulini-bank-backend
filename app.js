@@ -11,7 +11,9 @@ const app = express();
 dotenv.config();
 
 app.use(bodyParser.json())
-app.use(cors());
+app.use(cors({
+    origin: "https://lulinibank.vercel.app/"
+}));
 
 
 // Routes

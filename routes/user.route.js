@@ -22,7 +22,7 @@ router.post('/signup', async (req, res) => {
         // const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create a new user
-        const newUser = new User({ username, email, password, fullname, country, transactions, bankNumber, recipients });
+        const newUser = new User({ username, email, password, fullname, country, transactions, bankNumber, recipients, amount:0 });
         await newUser.save();
 
         // Send a success response
@@ -67,8 +67,7 @@ router.put('/changepassword', async (req, res) => {
             return res.status(400).send({ message: "New password doesn't match repeat password!" });
         }
 
-        user.password = newPassword;
-        await user.save();
+        await User.updateOne({email}, {password: newPassword});
 
         return res.status(200).send({ message: "Password changed successfully", account: { ...user.toObject() } });
     } catch (err) {
@@ -76,6 +75,7 @@ router.put('/changepassword', async (req, res) => {
     }
 });
 
+// Add loan
 router.put('/loan', async (req, res) => {
     const { password, loan, account } = req.body;
     const email = account.email;
@@ -84,53 +84,103 @@ router.put('/loan', async (req, res) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(400).send({ message: 'Account not found!' });
+            return res.status(404).send({ message: 'Account not found!' });
         }
 
-        if (user.password !== password) {
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
             return res.status(400).send({ message: 'Password is incorrect!' });
         }
 
         user.transactions.push(loan);
+        user.amount += loan.amount;
         await user.save();
 
-        return res.status(200).send({ message: "Loan is successful!", account: { ...user.toObject() } });
+        return res.status(200).send({ message: "Loan is successful!", account: user.toObject() });
     } catch (error) {
         return res.status(500).send({ message: 'Internal server error', error });
     }
 });
 
-
+// Add recipient
 router.put('/addrecipient', async (req, res) => {
     const { username, email, account } = req.body;
-    const curUserEmail = account?._id;
+    const curUserId = account?._id;
 
     try {
         const recipient = await User.findOne({ email, username });
-        const user = await User.findById(curUserEmail);
+        const user = await User.findById(curUserId);
 
         if (!recipient || !user) {
-            return res.status(400).send({ message: 'Account not found!' });
+            return res.status(404).send({ message: 'Account not found!' });
         }
 
-        const index = user.recipients.findIndex((rec) => rec.email === recipient.email);
-
-        if (index !== -1) {
+        if (user.recipients.some(rec => rec.email === recipient.email)) {
             return res.status(400).send({ message: 'Recipient already exists!' });
         }
 
         user.recipients.push(recipient);
         await user.save();
 
-        return res.status(200).send({ message: 'Recipient added successfully!', account: { ...user.toObject() } });
+        return res.status(200).send({ message: 'Recipient added successfully!', account: user.toObject() });
     } catch (error) {
         return res.status(500).send({ message: 'Internal server error', error });
     }
 });
 
+router.put("/sendmoney", async (req, res) => {
+    const {senderEmail, recipientEmail, senderAmount} = req.body;
 
-router.get('/user', (req, res) => {
-    res.status(200).send("Yeeeeee its working");
+    try {
+        const sendUser = await User.findOne({email:senderEmail});
+        const recipientUser = await User.findOne({email: recipientEmail});
+
+        if(!sendUser || !getUser){
+            return res.status(404).send({message: "Account not found", error})
+        }
+
+        if (sendUser.amount < senderAmount) {
+            return res.status(400).send({message:"Not enough money to complete transactions"});
+        }
+
+        const recipientTransaction = {
+            fullname: account.fullname,
+            type: "in",
+            amount: senderAmount,
+            date: new Date().toUTCString(),
+            process: "Completed",
+            from: formData.senderCurrency,
+            to: formData.recipientCurrency
+        };
+
+        recipientUser.transactions.push(recipientTransaction);
+
+        // Create a new transaction for the sender
+        const senderTransaction = {
+            fullname: recipientUser.fullname,
+            type: "out",
+            amount: senderAmount,
+            date: new Date().toUTCString(),
+            process: "Completed",
+            from: formData.senderCurrency,
+            to: formData.recipientCurrency
+        };
+
+        sendUser.transactions.push(senderTransaction);
+
+        sendUser.amount -= senderAmount;
+        recipientUser.amount += senderAmount;
+
+        await sendUser.save();
+        await recipientUser.save();
+
+
+    } catch(error) {
+        return res.status(500).send({ message: 'Internal server error', error });
+    }
 });
+
+
 
 export default router;
