@@ -128,41 +128,40 @@ router.put('/addrecipient', async (req, res) => {
 });
 
 router.put("/sendmoney", async (req, res) => {
-    const {senderEmail, recipientEmail, senderAmount} = req.body;
+    const { senderEmail, recipientEmail, senderAmount, senderCurrency, recipientCurrency } = req.body;
 
     try {
-        const sendUser = await User.findOne({email:senderEmail});
-        const recipientUser = await User.findOne({email: recipientEmail});
+        const sendUser = await User.findOne({ email: senderEmail });
+        const recipientUser = await User.findOne({ email: recipientEmail });
 
-        if(!sendUser || !getUser){
-            return res.status(404).send({message: "Account not found", error})
+        if (!sendUser || !recipientUser) {
+            return res.status(404).send({ message: "Account not found" });
         }
 
         if (sendUser.amount < senderAmount) {
-            return res.status(400).send({message:"Not enough money to complete transactions"});
+            return res.status(400).send({ message: "Not enough money to complete the transaction" });
         }
 
         const recipientTransaction = {
-            fullname: account.fullname,
+            fullname: sendUser.fullname,
             type: "in",
             amount: senderAmount,
             date: new Date().toUTCString(),
             process: "Completed",
-            from: formData.senderCurrency,
-            to: formData.recipientCurrency
+            from: senderCurrency,
+            to: recipientCurrency
         };
 
         recipientUser.transactions.push(recipientTransaction);
 
-        // Create a new transaction for the sender
         const senderTransaction = {
             fullname: recipientUser.fullname,
             type: "out",
             amount: senderAmount,
             date: new Date().toUTCString(),
             process: "Completed",
-            from: formData.senderCurrency,
-            to: formData.recipientCurrency
+            from: senderCurrency,
+            to: recipientCurrency
         };
 
         sendUser.transactions.push(senderTransaction);
@@ -173,8 +172,8 @@ router.put("/sendmoney", async (req, res) => {
         await sendUser.save();
         await recipientUser.save();
 
-
-    } catch(error) {
+        return res.status(200).send({ message: "Money sent successfully" });
+    } catch (error) {
         return res.status(500).send({ message: 'Internal server error', error });
     }
 });
