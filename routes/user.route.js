@@ -87,9 +87,7 @@ router.put('/loan', async (req, res) => {
             return res.status(404).send({ message: 'Account not found!' });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
+        if (user.password !== password) {
             return res.status(400).send({ message: 'Password is incorrect!' });
         }
 
