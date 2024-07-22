@@ -12,7 +12,7 @@ dotenv.config();
 
 app.use(bodyParser.json())
 app.use(cors({
-    origin: "https://lulinibank.vercel.app/"
+    origin: "https://lulinibank.vercel.app"
 }));
 
 
